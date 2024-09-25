@@ -1,0 +1,39 @@
+#version 330 core
+layout (location = 0) in float altitude;
+out vec2 fragTexCoord;
+uniform mat4 pv;
+uniform vec2 bottomLeft;
+uniform vec2 topRight;
+uniform int gridSize;
+const float earthRadius = 6371000.0;
+
+void main()
+{
+    int row = gl_VertexID / gridSize;
+    int col = gl_VertexID % gridSize;
+
+    float u = float(col) / float(gridSize - 1);
+    float v = float(row) / float(gridSize - 1);
+
+    fragTexCoord = vec2(u, 1.0 - v);  // Flip v coordinate
+
+    float lat = mix(bottomLeft.x, topRight.x, v);
+    float lon = mix(bottomLeft.y, topRight.y, u);
+
+    float radLat = radians(lat);
+    float radLon = radians(lon);
+
+    float cosLat = cos(radLat);
+    float sinLat = sin(radLat);
+    float cosLon = cos(radLon);
+    float sinLon = sin(radLon);
+
+    float x = earthRadius * cosLat * sinLon;  // Compute x
+    float y = earthRadius * sinLat;           // Compute y
+    float z = -earthRadius * cosLat * cosLon; // Compute z
+
+    y += altitude;
+
+    gl_Position = pv * vec4(x, y, z, 1.0);
+    fragTexCoord = vec2(u, 1.0 - v);  // Again, flip v coordinate
+}
